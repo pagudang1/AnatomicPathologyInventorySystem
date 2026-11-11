@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>API</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+    @media (max-width: 640px) {
+      button, select, input { font-size: 14px !important; }
+    }
+    @keyframes iosPopUp {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .animate-ios-pop { animation: iosPopUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
+    /* Background Laboratorium */
+    .bg-laboratorium {
+      background-image: linear-gradient(rgba(248, 250, 252, 0.92), rgba(248, 250, 252, 0.92)), url('https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?q=80&w=1920&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+  <!-- NOTIFIKASI TOAST MODERN -->
+  <div id="toast-overlay-center" class="fixed inset-0 z-[99999] hidden items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all duration-300">
+    <div id="toast-ios-card" class="w-full max-w-md bg-white/85 backdrop-blur-2xl border border-white/60 rounded-3xl shadow-2xl overflow-hidden animate-ios-pop text-slate-900 p-5 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shadow-sm bg-orange-500 flex-shrink-0">
+            <img src="https://lh3.googleusercontent.com/d/1jSG9A_TBoh2n-SDiUBCGe2zcnEUlcjlF" alt="Logo SIAP" class="w-full h-full object-cover">
+          </div>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Anatomic Pathology Inventory</span>
+        </div>
+        <span class="text-[11px] font-semibold text-slate-400">baru saja</span>
+      </div>
+      <div class="space-y-1">
+        <h4 id="toast-ios-title" class="text-base font-extrabold text-slate-900 tracking-tight leading-snug">Pemberitahuan Sistem</h4>
+        <p id="toast-ios-message" class="text-sm font-medium text-slate-600 leading-relaxed">Pesan notifikasi akan muncul di sini.</p>
+      </div>
+      <div class="pt-1 flex justify-between items-center text-[11px] font-bold text-slate-500">
+        <span id="toast-ios-footer">Ketuk untuk menutup</span>
+        <button onclick="closeToastCenter()" type="button" class="px-3 py-1 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition text-xs font-semibold">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL KONFIRMASI MODERN -->
+  <div id="modal-confirm-modern" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-[99998]">
+    <div class="w-full max-w-md bg-white/90 backdrop-blur-2xl border border-white/70 rounded-3xl shadow-2xl overflow-hidden animate-ios-pop text-slate-900 p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center shadow-sm bg-orange-500 flex-shrink-0">
+            <img src="https://lh3.googleusercontent.com/d/1jSG9A_TBoh2n-SDiUBCGe2zcnEUlcjlF" alt="Logo SIAP" class="w-full h-full object-cover">
+          </div>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-700">KONFIRMASI SISTEM</span>
+        </div>
+        <span class="text-[11px] font-semibold text-slate-400">Notifikasi</span>
+      </div>
+      <div class="space-y-1 text-left">
+        <h4 id="confirm-title" class="text-base font-extrabold text-slate-900">Konfirmasi Tindakan</h4>
+        <p id="confirm-message" class="text-sm font-medium text-slate-600 leading-relaxed">Apakah Anda yakin ingin melanjutkan proses ini?</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button type="button" id="btn-confirm-batal" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-extrabold transition">Batal</button>
+        <button type="button" id="btn-confirm-ya" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-extrabold transition shadow-md">Ya, Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DETAIL PERINGATAN (STOK KRITIS & KEDALUWARSA) -->
+  <div id="modal-alert-detail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden">
+      <div id="modal-alert-header-bg" class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-indigo-50">
+        <div>
+          <h4 id="modal-alert-title" class="font-bold text-indigo-900 text-lg">Rincian Peringatan</h4>
+          <p id="modal-alert-subtitle" class="text-xs text-indigo-700 font-medium">Daftar reagen terkait</p>
+        </div>
+        <button onclick="closeModal('modal-alert-detail')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-96">
+          <table class="w-full text-left text-sm">
+            <thead id="modal-alert-table-head" class="bg-slate-50 text-slate-600 uppercase text-xs">
+              <tr>
+                <th class="p-3">Nama Reagen</th>
+                <th class="p-3 text-center">Stok / Status</th>
+              </tr>
+            </thead>
+            <tbody id="table-alert-detail-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-end pt-2">
+          <button type="button" onclick="closeModal('modal-alert-detail')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LOGIN MODERN -->
+  <div id="loginOverlay" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gradient-to-br from-slate-900/85 via-indigo-950/80 to-slate-900/90 backdrop-blur-md">
+    <div class="w-full max-w-md bg-white/95 backdrop-blur-2xl border border-white/60 p-8 rounded-3xl shadow-2xl text-center space-y-6 animate-ios-pop">
+      
+      <div class="space-y-2">
+        <div class="w-24 h-24 mx-auto flex items-center justify-center shadow-lg shadow-orange-500/30 rounded-full overflow-hidden bg-orange-500 border-2 border-white">
+          <img src="https://lh3.googleusercontent.com/d/1jSG9A_TBoh2n-SDiUBCGe2zcnEUlcjlF" alt="Logo SIAP" class="w-full h-full object-cover">
+        </div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Login Sistem API</h2>
+        <p class="text-xs text-slate-500 font-medium">Anatomic Pathology Inventory</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Username</label>
+          <input type="text" id="login-username" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
+          <input type="password" id="login-password" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+        </div>
+        <button type="submit" id="btn-login-submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-extrabold text-sm shadow-lg shadow-indigo-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
+          Masuk ke Sistem
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="flex h-screen overflow-hidden">
+    <!-- SIDEBAR -->
+    <div class="w-64 bg-slate-900 text-white flex flex-col justify-between">
+      <div>
+        <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+          <img src="https://lh3.googleusercontent.com/d/1jSG9A_TBoh2n-SDiUBCGe2zcnEUlcjlF" alt="Logo SIAP" class="w-13 h-13 object-contain">
+          <div><h1 class="font-bold text-2xl leading-none"></h1></div>
+        </div>
+        <nav class="p-4 space-y-2">
+          <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-600 text-white text-sm font-medium transition-all">
+            <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
+          </button>
+          <button onclick="switchTab('master')" id="menu-master-btn" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white text-sm font-medium transition-all">
+            <i class="fa-solid fa-database w-5"></i> Master Data Reagen
+          </button>
+          <button onclick="openModalPengaturan()" id="menu-setting-btn" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white text-sm font-medium transition-all">
+            <i class="fa-solid fa-sliders w-5"></i> Set Minimum Stok
+          </button>
+          <button onclick="switchTab('kartu-stok')" id="menu-kartu-stok-btn" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white font-medium transition-all">
+            <i class="fa-solid fa-clipboard-list w-5"></i> Kartu Stok
+          </button>
+        </nav>
+      </div>
+      <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">Version 2026.1</div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER WITH LAB BACKGROUND -->
+    <div class="flex-1 flex flex-col overflow-y-auto bg-laboratorium">
+      <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-xs">
+        <h2 id="page-title" class="text-2xl font-extrabold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent tracking-tight">Dashboard Laboratorium</h2>
+        <div class="flex items-center gap-4">
+          <button onclick="openModalProfil()" class="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition text-left cursor-pointer border border-transparent hover:border-slate-200">
+            <div class="text-right">
+              <p id="userDisplayName" class="text-sm font-semibold leading-none">Admin Laboran</p>
+              <span class="text-xs text-emerald-500 font-medium">● Online</span>
+            </div>
+            <div id="userAvatarContainer" class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-indigo-600 overflow-hidden border border-slate-300">
+              <span id="userAvatarText">AL</span>
+            </div>
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW: DASHBOARD -->
+      <main id="view-dashboard" class="p-8 space-y-8 block">
+        <div id="alert-container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <button type="button" onclick="switchSubKategori('Histopatologi')" id="btn-sub-Histopatologi" class="sub-btn text-left p-6 rounded-2xl shadow-md transition-all transform hover:-translate-y-1 relative overflow-hidden bg-blue-600 text-white ring-4 ring-blue-300 ring-offset-2">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-blue-100 mb-1">Divisi Laboratorium</p>
+                <h3 class="text-2xl font-extrabold">Histopatologi</h3>
+                <p class="text-xs text-blue-100/80 mt-1"><span id="count-Histopatologi">--</span> Reagen Tersedia</p>
+              </div>
+              <div class="p-3 bg-white/25 backdrop-blur-md rounded-xl text-white"><i class="fa-solid fa-microscope text-2xl"></i></div>
+            </div>
+            <div class="active-indicator mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-semibold opacity-100 transition-opacity">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Divisi Aktif</span><i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </button>
+
+          <button type="button" onclick="switchSubKategori('Imunohisto')" id="btn-sub-Imunohisto" class="sub-btn text-left p-6 rounded-2xl shadow-sm transition-all transform hover:-translate-y-1 relative overflow-hidden bg-amber-500 text-white hover:shadow-md">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-amber-100 mb-1">Divisi Laboratorium</p>
+                <h3 class="text-2xl font-extrabold">Imunohistokimia</h3>
+                <p class="text-xs text-amber-100/80 mt-1"><span id="count-Imunohisto">--</span> Reagen Tersedia</p>
+              </div>
+              <div class="p-3 bg-white/25 backdrop-blur-md rounded-xl text-white"><i class="fa-solid fa-vial-virus text-2xl"></i></div>
+            </div>
+            <div class="active-indicator mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-semibold opacity-0 transition-opacity">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Divisi Aktif</span><i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </button>
+
+          <button type="button" onclick="switchSubKategori('Sitologi')" id="btn-sub-Sitologi" class="sub-btn text-left p-6 rounded-2xl shadow-sm transition-all transform hover:-translate-y-1 relative overflow-hidden bg-rose-600 text-white hover:shadow-md">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-rose-100 mb-1">Divisi Laboratorium</p>
+                <h3 class="text-2xl font-extrabold">Sitologi</h3>
+                <p class="text-xs text-rose-100/80 mt-1"><span id="count-Sitologi">--</span> Reagen Tersedia</p>
+              </div>
+              <div class="p-3 bg-white/25 backdrop-blur-md rounded-xl text-white"><i class="fa-solid fa-dna text-2xl"></i></div>
+            </div>
+            <div class="active-indicator mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-semibold opacity-0 transition-opacity">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Divisi Aktif</span><i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </button>
+        </div>
+
+        <div class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-800">Log Aktivitas Penggunaan (<span class="txt-kategori">Histopatologi</span>)</h3>
+              <div class="flex items-center gap-2 mt-3 flex-wrap">
+                <select id="filterLogBulan" onchange="renderLogTable()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white font-medium text-slate-700">
+                  <option value="">Semua Bulan</option>
+                  <option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option><option value="04">April</option>
+                  <option value="05">Mei</option><option value="06">Juni</option><option value="07">Juli</option><option value="08">Agustus</option>
+                  <option value="09">September</option><option value="10">Oktober</option><option value="11" selected>November</option><option value="12">Desember</option>
+                </select>
+                <select id="filterLogTahun" onchange="renderLogTable()" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm bg-white font-medium text-slate-700"></select>
+                <button onclick="resetFilterLog()" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium">Reset</button>
+              </div>
+            </div>
+            <button onclick="openModalAmbil()" class="bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm">
+              <i class="fa-solid fa-hand-holding-dropper"></i> Ambil / Gunakan Reagen
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase bg-slate-50/70">
+                  <th class="py-3 px-4">ID Log</th><th class="py-3 px-4">Kode</th><th class="py-3 px-4">Nama Barang</th><th class="py-3 px-4">Pengambil</th><th class="py-3 px-4">Tgl Ambil</th><th class="py-3 px-4 text-center">Jumlah Diambil</th>
+                </tr>
+              </thead>
+              <tbody id="table-log-body" class="text-sm divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+      <!-- VIEW: MASTER DATA REAGEN -->
+      <main id="view-master" class="p-8 space-y-6 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <button type="button" onclick="switchMasterKategori('Histopatologi')" id="btn-master-Histopatologi" class="master-sub-btn text-left p-6 rounded-2xl shadow-md transition-all transform hover:-translate-y-1 relative overflow-hidden bg-blue-600 text-white ring-4 ring-blue-300 ring-offset-2">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-blue-100 mb-1">Divisi Laboratorium</p>
+                <h3 class="text-2xl font-extrabold">Histopatologi</h3>
+                <p class="text-xs text-blue-100/80 mt-1"><span id="count-master-Histopatologi">--</span> Katalog Terdaftar</p>
+              </div>
+              <div class="p-3 bg-white/25 backdrop-blur-md rounded-xl text-white"><i class="fa-solid fa-microscope text-2xl"></i></div>
+            </div>
+            <div class="master-active-indicator mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-semibold opacity-100 transition-opacity">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Divisi Aktif</span><i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </button>
+
+          <button type="button" onclick="switchMasterKategori('Imunohisto')" id="btn-master-Imunohisto" class="master-sub-btn text-left p-6 rounded-2xl shadow-sm transition-all transform hover:-translate-y-1 relative overflow-hidden bg-amber-500 text-white hover:shadow-md">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-amber-100 mb-1">Divisi Laboratorium</p>
+                <h3 class="text-2xl font-extrabold">Imunohistokimia</h3>
+                <p class="text-xs text-amber-100/80 mt-1"><span id="count-master-Imunohisto">--</span> Katalog Terdaftar</p>
+              </div>
+              <div class="p-3 bg-white/25 backdrop-blur-md rounded-xl text-white"><i class="fa-solid fa-vial-virus text-2xl"></i></div>
+            </div>
+            <div class="master-active-indicator mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-semibold opacity-0 transition-opacity">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Divisi Aktif</span><i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </button>
+
+          <button type="button" onclick="switchMasterKategori('Sitologi')" id="btn-master-Sitologi" class="master-sub-btn text-left p-6 rounded-2xl shadow-sm transition-all transform hover:-translate-y-1 relative overflow-hidden bg-rose-600 text-white hover:shadow-md">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-rose-100 mb-1">Divisi Laboratorium</p>
+                <h3 class="text-2xl font-extrabold">Sitologi</h3>
+                <p class="text-xs text-rose-100/80 mt-1"><span id="count-master-Sitologi">--</span> Katalog Terdaftar</p>
+              </div>
+              <div class="p-3 bg-white/25 backdrop-blur-md rounded-xl text-white"><i class="fa-solid fa-dna text-2xl"></i></div>
+            </div>
+            <div class="master-active-indicator mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-xs font-semibold opacity-0 transition-opacity">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Divisi Aktif</span><i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </button>
+        </div>
+
+        <div class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">Katalog Master & Manajemen Batch (<span class="txt-master-kategori">Histopatologi</span>)</h3>
+              <p class="text-sm text-slate-500">Kelola spesifikasi reagen dan klik "Detail Batch & Merk" untuk mengatur stok fisik.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="downloadPDFRekapMaster()" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-file-pdf"></i> Download PDF Rekap Divisi
+              </button>
+              <button onclick="openModalMaster()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus"></i> Tambah Katalog Master
+              </button>
+            </div>
+          </div>
+          
+          <div id="print-area-master-rekap" class="overflow-x-auto">
+            <div class="hidden print-header mb-4 text-center">
+              <h2 class="text-lg font-extrabold uppercase">REKAP MASTER DATA REAGEN & SISA STOK</h2>
+              <h3 class="text-sm font-bold uppercase text-slate-600">DIVISI: <span class="txt-master-kategori">Histopatologi</span> - RUMAH SAKIT</h3>
+            </div>
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase bg-slate-50/70">
+                  <th class="py-3 px-4">Kategori Lab</th>
+                  <th class="py-3 px-4">Nama Reagen</th>
+                  <th class="py-3 px-4">ID / CAS NUMBER</th>
+                  <th class="py-3 px-4">Sifat Bahan</th>
+                  <th class="py-3 px-4">Bentuk Fisik</th>
+                  <th class="py-3 px-4 text-center">Total Stok Akhir</th>
+                  <th class="py-3 px-4 text-center no-print">Stok & Batch (Merk / ED)</th>
+                  <th class="py-3 px-4 text-center no-print">Aksi Master</th>
+                </tr>
+              </thead>
+              <tbody id="table-master-body" class="text-sm divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+      <!-- VIEW: KARTU STOK REAGEN FISIK RS -->
+      <main id="view-kartu-stok" class="p-8 space-y-6 hidden">
+        <div class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+          <div id="print-area-kartu-stok" class="bg-white p-6 rounded-2xl space-y-6">
+            <div class="border-b-2 border-slate-800 pb-4">
+              <div class="text-center mb-4">
+                <h2 id="title-ks-header" class="text-xl font-extrabold text-slate-800 uppercase tracking-wide">KARTU STOK INSTALASI PATOLOGI ANATOMI</h2>
+                <h3 class="text-md font-bold text-slate-600 uppercase">RUMAH SAKIT "dr. SAIFUL ANWAR MALANG"</h3>
+              </div>
+              
+              <div id="filter-panel-ks" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Divisi / Kategori</label>
+                  <select id="selectKartuStokDivisi" onchange="populateSelectKartuStok(); renderKartuStok();" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white font-medium">
+                    <option value="">Semua Divisi</option>
+                    <option value="Histopatologi">Histopatologi</option>
+                    <option value="Imunohistokimia">Imunohistokimia</option>
+                    <option value="Sitologi">Sitologi</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Reagen</label>
+                  <select id="selectKartuStokBarang" onchange="renderKartuStok();" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white font-medium">
+                    <option value="">-- Pilih Reagen --</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Bulan</label>
+                  <select id="selectKartuStokBulan" onchange="renderKartuStok();" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white font-medium">
+                    <option value="">Semua Bulan</option>
+                    <option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option><option value="04">April</option>
+                    <option value="05">Mei</option><option value="06">Juni</option><option value="07">Juli</option><option value="08">Agustus</option>
+                    <option value="09">September</option><option value="10">Oktober</option><option value="11" selected>November</option><option value="12">Desember</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1">Tahun</label>
+                  <select id="selectKartuStokTahun" onchange="renderKartuStok();" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white font-medium"></select>
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center text-xs font-semibold text-slate-700 px-1">
+                <div>Nama Reagen: <span id="lbl-info-reagen" class="text-indigo-600 font-extrabold">-</span></div>
+                <div>Divisi: <span id="lbl-info-divisi" class="text-indigo-600 font-extrabold">-</span></div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-300 rounded-xl shadow-sm">
+              <table id="tbl-main-kartu-stok" class="w-full text-sm text-left border-collapse">
+                <thead id="thead-kartu-stok" class="text-xs text-slate-800 uppercase bg-slate-100 border-b border-slate-300">
+                  <tr>
+                    <th class="py-3 px-3 border-r border-slate-300 text-center w-28">Tanggal</th>
+                    <th class="py-3 px-3 border-r border-slate-300 text-center text-blue-700 w-20">Masuk</th>
+                    <th class="py-3 px-3 border-r border-slate-300 text-center text-red-700 w-20">Keluar</th>
+                    <th class="py-3 px-3 border-r border-slate-300 text-center font-bold w-20">Sisa</th>
+                    <th class="py-3 px-3 border-r border-slate-300 text-center w-28">ED</th>
+                    <th class="py-3 px-3 border-r border-slate-300 text-center w-24">Satuan</th>
+                    <th class="py-3 px-3">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody id="table-kartu-stok-body" class="divide-y divide-slate-200">
+                  <tr><td colspan="7" class="text-center py-8 text-slate-400">Silakan pilih reagen terlebih dahulu.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-4">
+            <button onclick="downloadPDFRekapBulanan()" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2">
+              <i class="fa-solid fa-file-pdf"></i> Download PDF Rekap Bulanan
+            </button>
+            <button onclick="downloadPDFKartuStok()" type="button" class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2">
+              <i class="fa-solid fa-file-pdf"></i> Download PDF Kartu Stok
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: PROFIL -->
+  <div id="modal-profil" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-indigo-50">
+        <h4 class="font-bold text-indigo-900"><i class="fa-solid fa-user-gear mr-2"></i>Pengaturan Akun & Profil</h4>
+        <button onclick="closeModal('modal-profil')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="form-profil" onsubmit="submitFormProfil(event)" class="p-6 space-y-4">
+        <div class="flex flex-col items-center justify-center">
+          <div id="profil-preview-container" class="w-20 h-20 rounded-full bg-slate-200 border-2 border-indigo-500 overflow-hidden flex items-center justify-center font-bold text-indigo-600 text-xl shadow-sm mb-2">
+            <span id="profil-preview-text">AL</span>
+          </div>
+          <span class="text-xs text-slate-500 font-medium">Pratinjau Foto Profil</span>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Tampilan</label>
+          <input type="text" id="profil-nama" required class="w-full border rounded-xl px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Upload Foto Baru Dari Komputer</label>
+          <input type="file" id="profil-file-foto" accept="image/*" onchange="previewProfileImage(event)" class="w-full border rounded-xl px-3 py-2 text-sm file:mr-4 file:py-1 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+        </div>
+        <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+          <button type="button" onclick="handleLogout()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">
+            <i class="fa-solid fa-right-from-bracket"></i> Keluar (Logout)
+          </button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('modal-profil')" class="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold">Simpan</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETAIL BATCH -->
+  <div id="modal-batch-detail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-5xl rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-indigo-50">
+        <div>
+          <h4 class="font-bold text-indigo-900 text-lg">Manajemen Batch & Stok Fisik Reagen</h4>
+          <p id="modal-batch-subtitle" class="text-xs text-indigo-700 font-medium">Rincian Merk, Tanggal Terima, Tanggal Expired, dan Jumlah Stok</p>
+        </div>
+        <button onclick="closeModal('modal-batch-detail')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-semibold text-slate-500 uppercase">Daftar Batch / Varian Masuk</span>
+          <button onclick="bukaFormTambahBatchDariModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-plus"></i> Tambah Batch & Stok Baru
+          </button>
+        </div>
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-600 uppercase text-xs">
+              <tr>
+                <th class="p-3">Kode / No. Batch</th>
+                <th class="p-3">Merk / Produsen</th>
+                <th class="p-3 text-center">Stok Masuk</th>
+                <th class="p-3 text-center">Stok Akhir</th>
+                <th class="p-3">Tanggal Terima</th>
+                <th class="p-3">Tanggal Expired (ED)</th>
+                <th class="p-3 text-center">Status ED</th>
+                <th class="p-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="table-batch-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-end pt-2">
+          <button type="button" onclick="closeModal('modal-batch-detail')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FORM EDIT / TAMBAH BATCH -->
+  <div id="modal-edit-batch-item" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <h4 id="modal-batch-item-title" class="font-bold text-slate-900">Form Batch & Stok Fisik</h4>
+        <button onclick="closeModal('modal-edit-batch-item')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="form-batch-item" onsubmit="submitFormBatchItem(event)" class="p-6 space-y-4">
+        <input type="hidden" id="batch-rowNum">
+        <input type="hidden" id="batch-nama-reagen">
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Kode / No. Batch</label><input type="text" id="batch-kode" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Merk / Produsen</label><input type="text" id="batch-merk" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-semibold text-slate-500 mb-1">Stok Masuk</label><input type="number" id="batch-stokMasuk" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+          <div><label class="block text-xs font-semibold text-slate-500 mb-1">Stok Akhir</label><input type="number" id="batch-stokAkhir" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        </div>
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Satuan</label><input type="text" id="batch-satuan" required class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="Cth: Botol, Galon, Box, Pack"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Terima</label><input type="date" id="batch-tglTerima" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+          <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Expired (ED)</label><input type="date" id="batch-tglExp" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeModal('modal-edit-batch-item')" class="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold">Simpan Batch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AMBIL REAGEN (DENGAN FIFO) -->
+  <div id="modal-ambil" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <h4 class="font-bold text-slate-900">Form Pengambilan Reagen (Prinsip FIFO)</h4>
+        <button onclick="closeModal('modal-ambil')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="form-ambil" onsubmit="submitFormAmbil(event)" class="p-6 space-y-4">
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Pilih Reagen (Utamakan ED Terdekat)</label><select id="ambil-kode" required class="w-full border rounded-xl px-3 py-2.5 text-sm"></select></div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Pengambil (Otomatis)</label>
+          <input type="text" id="ambil-nama" required readonly class="w-full border bg-slate-100 rounded-xl px-3 py-2 text-sm text-slate-600 cursor-not-allowed">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-xs font-semibold text-slate-500 mb-1">Jumlah Ambil</label><input type="number" id="ambil-jumlah" required min="1" class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+          <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Pengambilan</label><input type="date" id="ambil-tgl" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeModal('modal-ambil')" class="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-semibold">Validasi Ambil</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MASTER DATA SPESIFIKASI -->
+  <div id="modal-master" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <h4 id="modal-master-title" class="font-bold text-slate-900">Form Katalog Spesifikasi Master</h4>
+        <button onclick="closeModal('modal-master')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="form-master" onsubmit="submitFormMaster(event)" class="p-6 space-y-4">
+        <input type="hidden" id="master-rowNum">
+        <input type="hidden" id="master-kategori">
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Reagen / Bahan</label><input type="text" id="master-nama" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-xs font-semibold text-slate-500 mb-1">ID / CAS Number</label><input type="text" id="master-rumus" placeholder="Cth: CAS 67-56-1 / ID-001" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Sifat Bahan</label>
+            <select id="master-grade" required class="w-full border rounded-xl px-3 py-2 text-sm bg-white font-medium">
+              <option value="-">- (Tidak Ada / Netral)</option>
+              <option value="Mudah Terbakar">Mudah Terbakar</option>
+              <option value="Toxic">Toxic</option>
+              <option value="Korosif">Korosif</option>
+              <option value="Teroksidasi">Teroksidasi</option>
+              <option value="Bahaya Lingkungan">Bahaya Lingkungan</option>
+              <option value="Iritasi">Iritasi</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Bentuk Fisik</label>
+          <select id="master-bentuk" class="w-full border rounded-xl px-3 py-2 text-sm bg-white font-medium">
+            <option value="Liquid (Cair)">Liquid (Cair)</option>
+            <option value="Powder (Bubuk)">Powder (Bubuk)</option>
+            <option value="Tabung">Tabung</option>
+            <option value="Gel">Gel</option>
+            <option value="Solid">Solid</option>
+            <option value="Gas">Gas</option>
+            <option value="Plastik (Polimer)">Plastik (Polimer)</option>
+            <option value="Jarum">Jarum</option>
+            <option value="Serat/Sheets">Serat/Sheets</option>
+            <option value="Tekstil/Karet">Tekstil/Karet</option>
+            <option value="Kasa">Kasa</option>
+            <option value="Kaca">Kaca</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeModal('modal-master')" class="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold">Simpan Katalog</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PENGATURAN -->
+  <div id="modal-pengaturan" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <h4 class="font-bold text-slate-900"><i class="fa-solid fa-gear text-slate-500 mr-2"></i>Ambang Batas Minimum</h4>
+        <button onclick="closeModal('modal-pengaturan')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="form-pengaturan" onsubmit="submitPengaturan(event)" class="p-6 space-y-4">
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Min. Stok Histopatologi</label><input type="number" id="cfg-histo" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Min. Stok Imunohistokimia</label><input type="number" id="cfg-imuno" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        <div><label class="block text-xs font-semibold text-slate-500 mb-1">Min. Stok Sitologi</label><input type="number" id="cfg-sito" required class="w-full border rounded-xl px-3 py-2 text-sm"></div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <button type="button" onclick="closeModal('modal-pengaturan')" class="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold">Terapkan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script>
+    let appData = {};
+    let currentUser = null;
+    let currentKategori = 'Histopatologi'; 
+    let currentMasterKategori = 'Histopatologi';
+    let currentActiveBatchReagenName = '';
+    let autoCloseTimer = null;
+
+    function showToast(pesan, tipe = 'success', judul = 'Pemberitahuan Sistem') {
+      const overlay = document.getElementById('toast-overlay-center');
+      document.getElementById('toast-ios-title').innerText = judul;
+      document.getElementById('toast-ios-message').innerText = pesan;
+      overlay.classList.replace('hidden', 'flex');
+      clearTimeout(autoCloseTimer);
+      autoCloseTimer = setTimeout(() => { closeToastCenter(); }, 4000);
+    }
+
+    function closeToastCenter() {
+      document.getElementById('toast-overlay-center').classList.replace('flex', 'hidden');
+    }
+
+    function showConfirm(pesan, onYesCallback) {
+      const modal = document.getElementById('modal-confirm-modern');
+      document.getElementById('confirm-message').innerText = pesan;
+      modal.classList.replace('hidden', 'flex');
+
+      const btnYa = document.getElementById('btn-confirm-ya');
+      const btnBatal = document.getElementById('btn-confirm-batal');
+
+      let newBtnYa = btnYa.cloneNode(true);
+      let newBtnBatal = btnBatal.cloneNode(true);
+      btnYa.parentNode.replaceChild(newBtnYa, btnYa);
+      btnBatal.parentNode.replaceChild(newBtnBatal, btnBatal);
+
+      newBtnYa.addEventListener('click', () => {
+        modal.classList.replace('flex', 'hidden');
+        if (onYesCallback) onYesCallback();
+      });
+      newBtnBatal.addEventListener('click', () => {
+        modal.classList.replace('flex', 'hidden');
+      });
+    }
+
+    let idleTimer = null;
+    const IDLE_TIMEOUT_LIMIT = 10 * 60 * 1000;
+
+    function resetIdleTimer() {
+      if (currentUser) {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(triggerIdleLogout, IDLE_TIMEOUT_LIMIT);
+      }
+    }
+
+    function triggerIdleLogout() {
+      if (currentUser) {
+        showToast("Sesi Anda telah berakhir karena tidak aktif selama 10 menit.", "error", "Sesi Berakhir");
+        currentUser = null;
+        document.querySelectorAll('.fixed').forEach(el => {
+          if (el.id !== 'toast-overlay-center' && el.id !== 'modal-confirm-modern') el.classList.replace('flex', 'hidden');
+        });
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('login-username').value = '';
+        document.getElementById('login-password').value = '';
+      }
+    }
+
+    window.onload = function() { 
+      populateYearDropdowns();
+      fetchAppInitialData(); 
+      
+      setInterval(function() {
+        if (!currentUser) return;
+        google.script.run.withSuccessHandler(function(response) {
+          appData = response;
+          renderLogTable();
+          updateCategoryCounts();
+          checkAllAlerts();
+        }).getInitialData();
+      }, 15000);
+
+      window.addEventListener('mousemove', resetIdleTimer);
+      window.addEventListener('keypress', resetIdleTimer);
+      window.addEventListener('click', resetIdleTimer);
+      window.addEventListener('scroll', resetIdleTimer);
+    };
+
+    function populateYearDropdowns() {
+      const currentYear = new Date().getFullYear();
+      const yearSelects = [document.getElementById('selectKartuStokTahun'), document.getElementById('filterLogTahun')];
+      yearSelects.forEach(selectEl => {
+        if (!selectEl) return;
+        let selectedVal = selectEl.value || currentYear;
+        selectEl.innerHTML = '';
+        for (let y = currentYear + 20; y >= 2020; y--) {
+          let opt = document.createElement('option');
+          opt.value = y;
+          opt.innerText = y;
+          if (y == selectedVal) opt.selected = true;
+          selectEl.appendChild(opt);
+        }
+      });
+    }
+
+    function fetchAppInitialData() {
+      google.script.run.withSuccessHandler(function(response) {
+        appData = response;
+        renderAll();
+      }).getInitialData();
+    }
+
+    function renderAll() {
+      populateYearDropdowns();
+      renderLogTable();
+      renderMasterTable();
+      checkAllAlerts();
+      updateCategoryCounts();
+      updateMasterCategoryCounts();
+      populateSelectKartuStok();
+      renderKartuStok();
+      applyUserRoleAccess();
+    }
+
+    function applyUserRoleAccess() {
+      let isAdmin = currentUser && (
+        String(currentUser.username || '').toLowerCase() === 'admin' || 
+        String(currentUser.role || '').toLowerCase() === 'admin' ||
+        String(currentUser.nama || '').toLowerCase().includes('admin')
+      );
+
+      const menuMaster = document.getElementById('menu-master-btn');
+      const menuSetting = document.getElementById('menu-setting-btn');
+      const menuKartuStok = document.getElementById('menu-kartu-stok-btn');
+
+      if (!isAdmin) {
+        if (menuMaster) menuMaster.style.display = 'none';
+        if (menuSetting) menuSetting.style.display = 'none';
+        if (menuKartuStok) menuKartuStok.style.display = 'none';
+        document.querySelectorAll('.btn-admin').forEach(el => el.style.display = 'none');
+      } else {
+        if (menuMaster) menuMaster.style.display = 'flex';
+        if (menuSetting) menuSetting.style.display = 'flex';
+        if (menuKartuStok) menuKartuStok.style.display = 'flex';
+        document.querySelectorAll('.btn-admin').forEach(el => el.style.display = '');
+      }
+    }
+
+    function formatSisaWaktu(diffDays) {
+      if (diffDays < 0) return 'Sudah Expired';
+      if (diffDays === 0) return 'Hari ini';
+      if (diffDays < 30) return `${diffDays} hari lagi`;
+      let bulan = Math.floor(diffDays / 30);
+      let sisaHari = diffDays % 30;
+      if (sisaHari === 0) return `${bulan} bulan lagi`;
+      return `${bulan} bulan ${sisaHari} hari lagi`;
+    }
+
+    function updateCategoryCounts() {
+      ['Histopatologi', 'Imunohisto', 'Sitologi'].forEach(cat => {
+        let count = (appData[cat.toLowerCase()] || []).length;
+        let el = document.getElementById(`count-${cat}`);
+        if (el) el.innerText = count;
+      });
+    }
+
+    function updateMasterCategoryCounts() {
+      ['Histopatologi', 'Imunohisto', 'Sitologi'].forEach(cat => {
+        let labelNorm = cat === 'Imunohisto' ? 'Imunohistokimia' : cat;
+        let masterData = appData.masterData || [];
+        let uniqueNames = new Set(masterData.filter(m => (m['Kategori'] || '').toLowerCase() === labelNorm.toLowerCase() || (m['Kategori'] || '').toLowerCase() === cat.toLowerCase()).map(m => (m['Nama Bahan'] || '').trim().toLowerCase()));
+        
+        let targetDivKey = cat.toLowerCase();
+        let asetDiv = appData[targetDivKey] || [];
+        asetDiv.forEach(a => {
+          if (a['Nama Barang']) uniqueNames.add(a['Nama Barang'].trim().toLowerCase());
+        });
+
+        let el = document.getElementById(`count-master-${cat}`);
+        if (el) el.innerText = uniqueNames.size;
+      });
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('main').forEach(m => m.classList.add('hidden'));
+      let target = document.getElementById('view-' + tabName);
+      if (target) {
+        target.classList.remove('hidden');
+        if (tabName === 'kartu-stok') { populateSelectKartuStok(); renderKartuStok(); }
+        else if (tabName === 'master') { renderMasterTable(); updateMasterCategoryCounts(); }
+      }
+      document.getElementById('page-title').innerText = tabName === 'master' ? "Katalog Master Data Reagen" : (tabName === 'kartu-stok' ? "Kartu Stok Fisik RS" : "Dashboard Laboratorium");
+      document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-indigo-600', 'text-white'); b.classList.add('text-slate-400'); });
+      if (event && event.currentTarget) { event.currentTarget.classList.add('bg-indigo-600', 'text-white'); event.currentTarget.classList.remove('text-slate-400'); }
+    }
+
+    function switchSubKategori(sub) {
+      currentKategori = sub;
+      ['Histopatologi', 'Imunohisto', 'Sitologi'].forEach(cat => {
+        let btn = document.getElementById(`btn-sub-${cat}`);
+        if (!btn) return;
+        let ind = btn.querySelector('.active-indicator');
+        if (cat === sub) {
+          btn.classList.add('ring-4', 'ring-offset-2', 'shadow-lg');
+          if (cat === 'Histopatologi') btn.classList.add('ring-blue-300');
+          if (cat === 'Imunohisto') btn.classList.add('ring-amber-300');
+          if (cat === 'Sitologi') btn.classList.add('ring-rose-300');
+          if (ind) { ind.classList.remove('opacity-0'); ind.classList.add('opacity-100'); }
+        } else {
+          btn.classList.remove('ring-4', 'ring-offset-2', 'ring-blue-300', 'ring-amber-300', 'ring-rose-300', 'shadow-lg');
+          if (ind) { ind.classList.remove('opacity-100'); ind.classList.add('opacity-0'); }
+        }
+      });
+      let label = sub === 'Imunohisto' ? 'Imunohistokimia' : sub;
+      document.querySelectorAll('.txt-kategori').forEach(el => el.innerText = label);
+      renderLogTable();
+    }
+
+    function switchMasterKategori(sub) {
+      currentMasterKategori = sub;
+      ['Histopatologi', 'Imunohisto', 'Sitologi'].forEach(cat => {
+        let btn = document.getElementById(`btn-master-${cat}`);
+        if (!btn) return;
+        let ind = btn.querySelector('.master-active-indicator');
+        if (cat === sub) {
+          btn.classList.add('ring-4', 'ring-offset-2', 'shadow-lg');
+          if (cat === 'Histopatologi') btn.classList.add('ring-blue-300');
+          if (cat === 'Imunohisto') btn.classList.add('ring-amber-300');
+          if (cat === 'Sitologi') btn.classList.add('ring-rose-300');
+          if (ind) { ind.classList.remove('opacity-0'); ind.classList.add('opacity-100'); }
+        } else {
+          btn.classList.remove('ring-4', 'ring-offset-2', 'ring-blue-300', 'ring-amber-300', 'ring-rose-300', 'shadow-lg');
+          if (ind) { ind.classList.remove('opacity-100'); ind.classList.add('opacity-0'); }
+        }
+      });
+      let label = sub === 'Imunohisto' ? 'Imunohistokimia' : sub;
+      document.querySelectorAll('.txt-master-kategori').forEach(el => el.innerText = label);
+      renderMasterTable();
+    }
+
+    function renderLogTable() {
+      let tbody = document.getElementById('table-log-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      let bulan = document.getElementById('filterLogBulan') ? document.getElementById('filterLogBulan').value : '';
+      let tahun = document.getElementById('filterLogTahun') ? document.getElementById('filterLogTahun').value : '';
+
+      let logs = (appData.logAktivitas || []).filter(l => {
+        let matchCat = (l['Kategori'] || currentKategori) === currentKategori;
+        if (!matchCat) return false;
+        if (!l['Tanggal Pengambilan']) return true;
+        let parts = l['Tanggal Pengambilan'].split('-');
+        if (tahun && parts[0] !== tahun) return false;
+        if (bulan && parts[1] !== bulan) return false;
+        return true;
+      });
+
+      if (logs.length === 0) { 
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 italic">Belum ada riwayat penggunaan pada periode ini</td></tr>`; 
+        return; 
+      }
+      logs.forEach(log => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 text-slate-600">
+            <td class="py-3 px-4 text-xs font-mono text-slate-400">${log['ID Log'] || '-'}</td>
+            <td class="py-3 px-4 font-mono font-semibold">${log['Kode Barang'] || '-'}</td>
+            <td class="py-3 px-4 font-medium text-slate-900">${log['Nama Barang'] || '-'}</td>
+            <td class="py-3 px-4">${log['Nama Pengambil'] || '-'}</td>
+            <td class="py-3 px-4">${log['Tanggal Pengambilan'] || '-'}</td>
+            <td class="py-3 px-4 text-center font-semibold text-amber-600">-${log['Jumlah Diambil'] || 0}</td>
+          </tr>`;
+      });
+    }
+
+    function resetFilterLog() {
+      if(document.getElementById('filterLogBulan')) document.getElementById('filterLogBulan').value = '';
+      if(document.getElementById('filterLogTahun')) document.getElementById('filterLogTahun').value = new Date().getFullYear();
+      renderLogTable();
+    }
+
+    function populateSelectKartuStok() {
+      const divVal = document.getElementById('selectKartuStokDivisi').value;
+      const selectBarang = document.getElementById('selectKartuStokBarang');
+      if (!selectBarang) return;
+      selectBarang.innerHTML = '<option value="">-- Pilih Reagen --</option>';
+      
+      let masterData = appData.masterData || [];
+      let filteredMaster = masterData.filter(m => {
+        if (!divVal) return true;
+        let kat = (m['Kategori'] || '').trim().toLowerCase();
+        let targetDiv = divVal.toLowerCase();
+        if (targetDiv === 'imunohistokimia') targetDiv = 'imunohisto';
+        return kat.includes(targetDiv);
+      });
+
+      let uniqueNamesSet = new Set(filteredMaster.map(item => (item['Nama Bahan'] || '').trim()).filter(Boolean));
+      
+      let semuaAset = [];
+      if (!divVal || divVal === 'Histopatologi') semuaAset = semuaAset.concat(appData.histopatologi || []);
+      if (!divVal || divVal === 'Imunohistokimia' || divVal === 'Imunohisto') semuaAset = semuaAset.concat(appData.imunohisto || []);
+      if (!divVal || divVal === 'Sitologi') semuaAset = semuaAset.concat(appData.sitologi || []);
+      
+      semuaAset.forEach(a => {
+        if (a['Nama Barang']) uniqueNamesSet.add(a['Nama Barang'].trim());
+      });
+
+      let uniqueNames = [...uniqueNamesSet].sort();
+
+      uniqueNames.forEach(nama => {
+        selectBarang.innerHTML += `<option value="${nama}">${nama}</option>`;
+      });
+    }
+
+    function renderKartuStok() {
+      const namaReagen = document.getElementById('selectKartuStokBarang').value;
+      const divVal = document.getElementById('selectKartuStokDivisi').value;
+      const bulanFilter = document.getElementById('selectKartuStokBulan').value;
+      const tahunFilter = document.getElementById('selectKartuStokTahun').value;
+      const tbody = document.getElementById('table-kartu-stok-body');
+      
+      document.getElementById('lbl-info-reagen').innerText = namaReagen || '-';
+      document.getElementById('lbl-info-divisi').innerText = divVal || 'Semua Divisi';
+
+      if (!tbody) return;
+      if (!namaReagen) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Silakan pilih reagen terlebih dahulu.</td></tr>`;
+        return;
+      }
+
+      let cleanTargetName = namaReagen.trim().toLowerCase();
+      let transactions = [];
+
+      let semuaAset = [...(appData.histopatologi || []), ...(appData.imunohisto || []), ...(appData.sitologi || [])];
+      let matchedBatches = semuaAset.filter(a => {
+        let nameInAsset = (a['Nama Barang'] || '').trim().toLowerCase();
+        return nameInAsset === cleanTargetName || nameInAsset.startsWith(cleanTargetName) || cleanTargetName.startsWith(nameInAsset);
+      });
+
+      let batchEdMap = {};
+      let batchSatuanMap = {};
+
+      matchedBatches.forEach(b => {
+        if (!b['Kode Barang'] || String(b['Kode Barang']).trim() === '' || String(b['Kode Barang']).trim() === '-') return;
+        let tgl = b['Tanggal Penerimaan'] || '2026-10-30';
+        let stokMasukAktif = Number(b['Stok Masuk'] || 0);
+        let edVal = b['Tanggal Expired'] || '-';
+        let satuanVal = b['Satuan'] || 'Botol';
+        
+        batchEdMap[String(b['Kode Barang']).trim()] = edVal;
+        batchSatuanMap[String(b['Kode Barang']).trim()] = satuanVal;
+
+        if (stokMasukAktif > 0) {
+          transactions.push({
+            tanggal: tgl,
+            masuk: stokMasukAktif,
+            keluar: 0,
+            ed: edVal,
+            satuan: satuanVal,
+            keterangan: `Penerimaan Batch: ${b['Kode Barang']} (Merk: ${b['Merk'] || '-'})`
+          });
+        }
+      });
+
+      let matchedLogs = (appData.logAktivitas || []).filter(l => {
+        let nameInLog = (l['Nama Barang'] || '').trim().toLowerCase();
+        return nameInLog === cleanTargetName || nameInLog.startsWith(cleanTargetName) || cleanTargetName.startsWith(nameInLog);
+      });
+
+      matchedLogs.forEach(l => {
+        let tgl = l['Tanggal Pengambilan'] || '2026-10-30';
+        let kodeBarangLog = l['Kode Barang'] ? String(l['Kode Barang']).trim() : '';
+        
+        let resolvedEd = batchEdMap[kodeBarangLog] || l['Tanggal Expired'] || '-';
+        let resolvedSatuan = batchSatuanMap[kodeBarangLog] || l['Satuan'] || 'Botol';
+
+        transactions.push({
+          tanggal: tgl,
+          masuk: 0,
+          keluar: Number(l['Jumlah Diambil'] || 0),
+          ed: resolvedEd,
+          satuan: resolvedSatuan,
+          keterangan: `Penggunaan oleh ${l['Nama Pengambil'] || '-'}`
+        });
+      });
+
+      transactions.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
+      let runningStock = 0;
+      let filterStartDate = (bulanFilter && tahunFilter) ? new Date(`${tahunFilter}-${bulanFilter}-01`) : null;
+      let renderedRows = [];
+      let saldoAwalSebelumBulan = 0;
+
+      transactions.forEach(tx => {
+        let txDate = new Date(tx.tanggal);
+        if (filterStartDate && txDate < filterStartDate) {
+          saldoAwalSebelumBulan += tx.masuk - tx.keluar;
+          runningStock = saldoAwalSebelumBulan;
+        } else {
+          runningStock += tx.masuk - tx.keluar;
+          renderedRows.push({
+            tanggal: tx.tanggal,
+            masuk: tx.masuk,
+            keluar: tx.keluar,
+            sisa: runningStock,
+            ed: tx.ed,
+            satuan: tx.satuan,
+            keterangan: tx.keterangan
+          });
+        }
+      });
+
+      tbody.innerHTML = '';
+      if (filterStartDate && saldoAwalSebelumBulan !== 0) {
+        tbody.innerHTML += `<tr class="bg-slate-50 font-semibold text-slate-500 italic"><td class="py-2.5 px-3 border-r border-slate-200 text-center text-xs">Sebelumnya</td><td class="py-2.5 px-3 border-r border-slate-200 text-center">-</td><td class="py-2.5 px-3 border-r border-slate-200 text-center">-</td><td class="py-2.5 px-3 border-r border-slate-200 text-center font-bold text-slate-700">${saldoAwalSebelumBulan}</td><td class="py-2.5 px-3 border-r border-slate-200 text-center text-xs">-</td><td class="py-2.5 px-3 border-r border-slate-200 text-center text-xs">-</td><td class="py-2.5 px-3 text-xs">Saldo Awal Periode</td></tr>`;
+      }
+
+      if (renderedRows.length === 0 && saldoAwalSebelumBulan === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 italic">Tidak ada transaksi tercatat untuk reagen ini (Stok Kosong / Nihil).</td></tr>`;
+        return;
+      }
+
+      renderedRows.forEach(r => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-3 border-r border-slate-200 text-center font-mono text-xs">${r.tanggal}</td>
+            <td class="py-3 px-3 border-r border-slate-200 text-center text-blue-700 font-semibold">${r.masuk > 0 ? '+' + r.masuk : '-'}</td>
+            <td class="py-3 px-3 border-r border-slate-200 text-center text-red-700 font-semibold">${r.keluar > 0 ? '-' + r.keluar : '-'}</td>
+            <td class="py-3 px-4 border-r border-slate-200 text-center font-bold text-slate-900">${r.sisa}</td>
+            <td class="py-3 px-3 border-r border-slate-200 text-center text-xs text-slate-600">${r.ed}</td>
+            <td class="py-3 px-3 border-r border-slate-200 text-center text-xs">${r.satuan}</td>
+            <td class="py-3 px-3 text-xs text-slate-700">${r.keterangan}</td>
+          </tr>`;
+      });
+    }
+
+    function downloadPDFRekapBulanan() {
+      const namaReagen = document.getElementById('selectKartuStokBarang').value;
+      if (!namaReagen) { showToast("Silakan pilih reagen terlebih dahulu.", "error", "Perhatian"); return; }
+      const element = document.getElementById('print-area-kartu-stok');
+      html2pdf().from(element).set({ margin: 0.5, filename: `Rekap-Bulanan-${namaReagen}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).save();
+    }
+
+    function downloadPDFKartuStok() {
+      const namaReagen = document.getElementById('selectKartuStokBarang').value;
+      if (!namaReagen) { showToast("Silakan pilih reagen terlebih dahulu.", "error", "Perhatian"); return; }
+      const element = document.getElementById('print-area-kartu-stok');
+      html2pdf().from(element).set({ margin: 0.5, filename: `Kartu-Stok-${namaReagen}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).save();
+    }
+
+    function downloadPDFRekapMaster() {
+      const element = document.getElementById('print-area-master-rekap');
+      document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.print-header').forEach(el => el.classList.remove('hidden'));
+      html2pdf().from(element).set({ margin: 0.5, filename: `Rekap-Master-${currentMasterKategori}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).save().then(() => {
+        document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
+        document.querySelectorAll('.print-header').forEach(el => el.classList.add('hidden'));
+      });
+    }
+
+    function openModalProfil() {
+      let nama = document.getElementById('userDisplayName').innerText;
+      document.getElementById('profil-nama').value = nama;
+      document.getElementById('modal-profil').classList.replace('hidden', 'flex');
+    }
+
+    function previewProfileImage(event) {
+      let file = event.target.files[0];
+      if (file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('profil-preview-container').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function submitFormProfil(e) {
+      e.preventDefault();
+      let namaBaru = document.getElementById('profil-nama').value;
+      if (!currentUser) currentUser = {};
+      currentUser.nama = namaBaru;
+      document.getElementById('userDisplayName').innerText = namaBaru;
+      showToast("Profil berhasil diperbarui!", "success", "Profil");
+      closeModal('modal-profil');
+    }
+
+    function handleLogout() {
+      showConfirm("Apakah Anda yakin ingin keluar?", () => {
+        currentUser = null;
+        closeModal('modal-profil');
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('login-username').value = '';
+        document.getElementById('login-password').value = '';
+      });
+    }
+
+    function renderMasterTable() {
+      let tbody = document.getElementById('table-master-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      
+      let master = appData.masterData || [];
+      let labelNorm = currentMasterKategori === 'Imunohisto' ? 'Imunohistokimia' : currentMasterKategori;
+      let filteredMaster = master.filter(m => (m['Kategori'] || '').trim().toLowerCase() === currentMasterKategori.toLowerCase() || (m['Kategori'] || '').trim().toLowerCase() === labelNorm.toLowerCase());
+
+      let groupedMap = {};
+      filteredMaster.forEach(item => {
+        let namaKey = (item['Nama Bahan'] || '').trim().toLowerCase();
+        if (namaKey) {
+          groupedMap[namaKey] = {
+            namaAsli: item['Nama Bahan'],
+            kategori: item['Kategori'],
+            rumus: item['Rumus Kimia CAS'] || '-',
+            grade: item['Grade Bahan'] || '-',
+            bentuk: item['Bentuk Fisik'] || '-',
+            rowNums: [item._rowNum]
+          };
+        }
+      });
+
+      let targetDivKey = currentMasterKategori.toLowerCase();
+      let asetDiv = appData[targetDivKey] || [];
+      asetDiv.forEach(a => {
+        let namaBahan = (a['Nama Barang'] || '').trim();
+        let namaKey = namaBahan.toLowerCase();
+        if (namaKey && !groupedMap[namaKey]) {
+          groupedMap[namaKey] = {
+            namaAsli: namaBahan,
+            kategori: labelNorm,
+            rumus: '-',
+            grade: '-',
+            bentuk: 'Liquid (Cair)',
+            rowNums: []
+          };
+        }
+      });
+
+      let uniqueList = Object.values(groupedMap);
+      let semuaAset = [...(appData.histopatologi || []), ...(appData.imunohisto || []), ...(appData.sitologi || [])];
+
+      if (uniqueList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 italic">Belum ada katalog reagen terdaftar untuk divisi ${labelNorm}</td></tr>`;
+        return;
+      }
+
+      uniqueList.forEach((item) => {
+        let masterRowRef = item.rowNums.length > 0 ? item.rowNums[0] : null;
+        let cleanTargetName = item.namaAsli.trim().toLowerCase();
+
+        let matchingBatches = semuaAset.filter(a => {
+          let nameInAsset = (a['Nama Barang'] || '').trim().toLowerCase();
+          return nameInAsset === cleanTargetName;
+        });
+
+        let totalStokAkhir = matchingBatches.reduce((sum, b) => {
+          let kode = String(b['Kode Barang'] || '').trim();
+          if (!kode || kode === '' || kode === '-') return sum;
+          let rawStok = String(b['Stok Akhir'] || '0').replace(/[^0-9.-]+/g, "");
+          return sum + (Number(rawStok) || 0);
+        }, 0);
+
+        let satuanDinamis = 'Botol';
+        if (matchingBatches.length > 0) {
+          let validBatch = matchingBatches.find(b => b['Satuan'] && String(b['Satuan']).trim() !== '');
+          if (validBatch) {
+            satuanDinamis = String(validBatch['Satuan']).trim();
+          }
+        }
+
+        let aksiMasterHtml = masterRowRef ? `
+          <button onclick="editMaster(${masterRowRef})" class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Edit Master"><i class="fa-solid fa-pen"></i></button>
+          <button onclick="hapusMasterGroup([${item.rowNums.join(',')}])" class="btn-admin p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Hapus Master"><i class="fa-solid fa-trash"></i></button>
+        ` : `<span class="text-xs text-slate-400 italic">Otomatis dari Batch</span>`;
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 text-slate-600">
+            <td class="py-3 px-4"><span class="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-bold">${item.kategori}</span></td>
+            <td class="py-3 px-4 font-bold text-slate-900">${item.namaAsli}</td>
+            <td class="py-3 px-4 font-mono text-xs">${item.rumus}</td>
+            <td class="py-3 px-4 font-medium"><span class="bg-slate-100 px-2 py-1 rounded text-xs">${item.grade}</span></td>
+            <td class="py-3 px-4 text-sm">${item.bentuk}</td>
+            <td class="py-3 px-4 text-center font-extrabold text-indigo-600">${totalStokAkhir} ${satuanDinamis}</td>
+            <td class="py-3 px-4 text-center no-print">
+              <button onclick="bukaModalBatch('${item.namaAsli}', '${item.kategori}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5 mx-auto shadow-sm">
+                <i class="fa-solid fa-boxes-stacked"></i> Detail Batch & Merk
+              </button>
+            </td>
+            <td class="py-3 px-4 text-center no-print">
+              ${aksiMasterHtml}
+            </td>
+          </tr>`;
+      });
+      applyUserRoleAccess();
+    }
+
+    function hapusMasterGroup(rowNumArray) {
+      showConfirm("Apakah Anda yakin ingin menghapus katalog reagen ini?", () => {
+        rowNumArray.forEach(rNum => {
+          google.script.run.withSuccessHandler(() => fetchAppInitialData()).deleteRow('Master_Data', rNum);
+        });
+        showToast("Katalog berhasil dihapus.", "success", "Hapus");
+      });
+    }
+
+    function bukaModalBatch(namaReagen, kategori) {
+      currentActiveBatchReagenName = namaReagen;
+      currentKategori = kategori === 'Imunohistokimia' ? 'Imunohisto' : kategori;
+      document.getElementById('modal-batch-subtitle').innerText = "Rincian Batch & Varian Merk untuk: " + namaReagen;
+      let tbody = document.getElementById('table-batch-body');
+      tbody.innerHTML = '';
+
+      let semuaAset = [...(appData.histopatologi || []), ...(appData.imunohisto || []), ...(appData.sitologi || [])];
+      let matchingBatches = semuaAset.filter(a => (a['Nama Barang'] || '').trim().toLowerCase() === namaReagen.trim().toLowerCase());
+      let today = new Date();
+
+      if (matchingBatches.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 italic">Belum ada data batch / stok fisik terdaftar.</td></tr>`;
+      } else {
+        matchingBatches.forEach((b) => {
+          let expDate = new Date(b['Tanggal Expired']);
+          let diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+          let badgeHtml = diffDays < 0 ? `<span class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Sudah ED</span>` : (diffDays <= 180 ? `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Hampir ED</span>` : `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Aman</span>`);
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50/80 transition">
+              <td class="p-3 font-mono font-semibold text-slate-700">${b['Kode Barang']}</td>
+              <td class="p-3 font-semibold text-slate-800">${b['Merk']}</td>
+              <td class="p-3 text-center font-medium text-blue-600">+${b['Stok Masuk'] || 0}</td>
+              <td class="p-3 text-center font-bold text-indigo-600">${b['Stok Akhir']} ${b['Satuan'] || ''}</td>
+              <td class="p-3 text-slate-600 font-medium">${b['Tanggal Penerimaan'] || '-'}</td>
+              <td class="p-3 text-rose-600 font-medium">${b['Tanggal Expired']}</td>
+              <td class="p-3 text-center">${badgeHtml}</td>
+              <td class="p-3 text-center space-x-1">
+                <button onclick="editBatchItem('${b['Kode Barang']}')" class="px-2 py-1 bg-slate-100 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-semibold transition">Edit</button>
+                <button onclick="hapusBatchItem('${currentKategori}', ${b._rowNum})" class="px-2 py-1 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 rounded-lg text-xs font-semibold transition">Hapus</button>
+              </td>
+            </tr>`;
+        });
+      }
+      document.getElementById('modal-batch-detail').classList.replace('hidden', 'flex');
+      applyUserRoleAccess();
+    }
+
+    function bukaFormTambahBatchDariModal() {
+      closeModal('modal-batch-detail');
+      document.getElementById('form-batch-item').reset();
+      document.getElementById('batch-rowNum').value = '';
+      document.getElementById('batch-nama-reagen').value = currentActiveBatchReagenName;
+      document.getElementById('batch-kode').value = "BAT-" + Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('batch-satuan').value = "Botol"; 
+      document.getElementById('modal-edit-batch-item').classList.replace('hidden', 'flex');
+    }
+
+    function editBatchItem(targetKodeBarang) {
+      closeModal('modal-batch-detail');
+      
+      let semuaAset = [
+        ...(appData.histopatologi || []).map(x => ({...x, _divisiKategori: 'Histopatologi'})),
+        ...(appData.imunohisto || []).map(x => ({...x, _divisiKategori: 'Imunohisto'})),
+        ...(appData.sitologi || []).map(x => ({...x, _divisiKategori: 'Sitologi'}))
+      ];
+
+      let item = semuaAset.find(a => String(a['Kode Barang']).trim() === String(targetKodeBarang).trim());
+      
+      if (!item) {
+        showToast("Data batch tidak ditemukan untuk diedit.", "error", "Perhatian");
+        return;
+      }
+
+      currentKategori = item._divisiKategori || currentKategori;
+
+      document.getElementById('batch-rowNum').value = item._rowNum || '';
+      document.getElementById('batch-nama-reagen').value = item['Nama Barang'] || '';
+      document.getElementById('batch-kode').value = item['Kode Barang'] || '';
+      document.getElementById('batch-merk').value = item['Merk'] || '';
+      document.getElementById('batch-satuan').value = item['Satuan'] || '';
+      document.getElementById('batch-stokMasuk').value = item['Stok Masuk'] || 0;
+      document.getElementById('batch-stokAkhir').value = item['Stok Akhir'] || 0;
+      document.getElementById('batch-tglTerima').value = item['Tanggal Penerimaan'] || '';
+      document.getElementById('batch-tglExp').value = item['Tanggal Expired'] || '';
+      
+      document.getElementById('modal-edit-batch-item').classList.replace('hidden', 'flex');
+    }
+
+    function submitFormBatchItem(e) {
+      e.preventDefault();
+      let payload = {
+        kodeBarang: document.getElementById('batch-kode').value,
+        namaBarang: document.getElementById('batch-nama-reagen').value,
+        merk: document.getElementById('batch-merk').value,
+        satuan: document.getElementById('batch-satuan').value,
+        stokAwal: 0,
+        stokMasuk: Number(document.getElementById('batch-stokMasuk').value) || 0,
+        stokAkhir: Number(document.getElementById('batch-stokAkhir').value) || 0,
+        tanggalPenerimaan: document.getElementById('batch-tglTerima').value,
+        tanggalExpired: document.getElementById('batch-tglExp').value
+      };
+      google.script.run.withSuccessHandler(() => {
+        showToast("Data batch berhasil disimpan!", "success", "Sukses");
+        closeModal('modal-edit-batch-item');
+        fetchAppInitialData();
+      }).saveAset(currentKategori, payload, document.getElementById('batch-rowNum').value);
+    }
+
+    function hapusBatchItem(kategori, rowNum) {
+      showConfirm("Apakah Anda yakin ingin menghapus batch ini?", () => {
+        let map = { 'Histopatologi': 'Aset_Histopatologi', 'Imunohisto': 'Aset_Imunohisto', 'Sitologi': 'Aset_Sitologi' };
+        google.script.run.withSuccessHandler(() => {
+          showToast("Batch berhasil dihapus!", "success", "Sukses");
+          fetchAppInitialData();
+          closeModal('modal-batch-detail');
+        }).deleteRow(map[kategori], rowNum);
+      });
+    }
+
+    let cachedAlertData = { stockCrit: {}, expiring: {} };
+
+    function checkAllAlerts() {
+      const alertContainer = document.getElementById('alert-container');
+      if (!alertContainer) return;
+      let limits = {};
+      (appData.pengaturan || []).forEach(p => limits[p['Kategori']] = Number(p['Min Stock']));
+      
+      cachedAlertData.stockCrit = { Histopatologi: [], Imunohisto: [], Sitologi: [] };
+      cachedAlertData.expiring = { Histopatologi: [], Imunohisto: [], Sitologi: [] };
+      let today = new Date();
+
+      ['Histopatologi', 'Imunohisto', 'Sitologi'].forEach(cat => {
+        let min = limits[cat] || 5;
+        let divisionAssets = appData[cat.toLowerCase()] || [];
+
+        let aggregatedStock = {};
+        divisionAssets.forEach(item => {
+          let namaBahan = (item['Nama Barang'] || '').trim();
+          if (!namaBahan) return;
+          if (!aggregatedStock[namaBahan]) {
+            aggregatedStock[namaBahan] = { totalStok: 0, satuan: item['Satuan'] || '' };
+          }
+          aggregatedStock[namaBahan].totalStok += Number(item['Stok Akhir'] || 0);
+        });
+
+        Object.keys(aggregatedStock).forEach(namaBahan => {
+          let data = aggregatedStock[namaBahan];
+          if (data.totalStok <= min) {
+            cachedAlertData.stockCrit[cat].push({ namaBarang: namaBahan, stok: data.totalStok, satuan: data.satuan });
+          }
+        });
+
+        divisionAssets.forEach(item => {
+          let namaBahan = (item['Nama Barang'] || '').trim();
+          let stokAkhir = Number(item['Stok Akhir'] || 0);
+
+          if (namaBahan !== '' && stokAkhir > 0 && item['Tanggal Expired']) {
+            let diffDays = Math.ceil((new Date(item['Tanggal Expired']) - today) / (1000 * 60 * 60 * 24));
+            if (diffDays <= 180) {
+              cachedAlertData.expiring[cat].push({ 
+                namaBarang: namaBahan, 
+                merk: item['Merk'] || '-', 
+                ed: item['Tanggal Expired'], 
+                status: formatSisaWaktu(diffDays) 
+              });
+            }
+          }
+        });
+      });
+
+      alertContainer.innerHTML = `
+        <div class="bg-gradient-to-br from-rose-50/90 via-white to-rose-100/40 border border-rose-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-2xl bg-rose-500 text-white flex items-center justify-center shadow-md shadow-rose-500/20">
+              <i class="fa-solid fa-triangle-exclamation text-base"></i>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-rose-900 text-base tracking-tight">Peringatan Stok Kritis</h4>
+              <p class="text-xs text-rose-600/80 font-medium">Divisi dengan reagen di bawah batas minimum</p>
+            </div>
+          </div>
+          <div class="space-y-2.5">${renderDivisionAccordion('stock', cachedAlertData.stockCrit)}</div>
+        </div>
+
+        <div class="bg-gradient-to-br from-amber-50/90 via-white to-amber-100/40 border border-amber-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20">
+              <i class="fa-solid fa-clock-rotate-left text-base"></i>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-amber-900 text-base tracking-tight">Peringatan Kedaluwarsa</h4>
+              <p class="text-xs text-amber-600/80 font-medium">Reagen yang mendekati masa expired (&le; 6 bulan)</p>
+            </div>
+          </div>
+          <div class="space-y-2.5">${renderDivisionAccordion('exp', cachedAlertData.expiring)}</div>
+        </div>
+      `;
+    }
+
+    function renderDivisionAccordion(type, dataMap) {
+      let divNames = { 'Histopatologi': 'Histopatologi', 'Imunohisto': 'Imunohistokimia', 'Sitologi': 'Sitologi' };
+      return ['Histopatologi', 'Imunohisto', 'Sitologi'].map(cat => {
+        let items = (dataMap[cat] || []).filter(i => i.namaBarang && String(i.namaBarang).trim() !== '');
+        let badgeColor = type === 'stock' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/20' : 'bg-amber-500 text-white shadow-sm shadow-amber-500/20';
+        let hoverColor = type === 'stock' ? 'hover:border-rose-300 hover:bg-rose-50/50' : 'hover:border-amber-300 hover:bg-amber-50/50';
+        let iconDivisi = cat === 'Histopatologi' ? 'fa-microscope' : (cat === 'Imunohisto' ? 'fa-vial-virus' : 'fa-dna');
+        
+        return `
+          <button type="button" onclick="openAlertDetailModal('${type}', '${cat}')" class="w-full text-left border border-slate-200/70 rounded-2xl p-3.5 bg-white/80 backdrop-blur-sm transition-all duration-200 flex items-center justify-between ${hoverColor} cursor-pointer group shadow-2xs">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-600 flex items-center justify-center transition-colors">
+                <i class="fa-solid ${iconDivisi} text-xs"></i>
+              </div>
+              <span class="font-bold text-xs text-slate-700 group-hover:text-slate-900">Divisi ${divNames[cat]}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-extrabold px-3 py-1 rounded-full ${badgeColor}">${items.length} Item</span>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-400 group-hover:translate-x-0.5 transition-transform"></i>
+            </div>
+          </button>`;
+      }).join('');
+    }
+
+    function openAlertDetailModal(type, kategori) {
+      let divNames = { 'Histopatologi': 'Histopatologi', 'Imunohisto': 'Imunohistokimia', 'Sitologi': 'Sitologi' };
+      let titleEl = document.getElementById('modal-alert-title');
+      let subtitleEl = document.getElementById('modal-alert-subtitle');
+      let headerBg = document.getElementById('modal-alert-header-bg');
+      let tableHead = document.getElementById('modal-alert-table-head');
+      let tbody = document.getElementById('table-alert-detail-body');
+      tbody.innerHTML = '';
+
+      let rawItems = (type === 'stock') ? cachedAlertData.stockCrit[kategori] : cachedAlertData.expiring[kategori];
+      let items = rawItems.filter(i => i.namaBarang && String(i.namaBarang).trim() !== '');
+
+      if (type === 'stock') {
+        titleEl.innerText = `Rincian Stok Kritis - Divisi ${divNames[kategori]}`;
+        headerBg.className = "px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-rose-50";
+        titleEl.className = "font-bold text-rose-900 text-lg";
+        subtitleEl.className = "text-xs text-rose-700 font-medium";
+        tableHead.innerHTML = `<tr><th class="p-3">Nama Reagen</th><th class="p-3 text-center">Sisa Stok Akhir</th></tr>`;
+        
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="2" class="text-center py-6 text-slate-400 italic">Tidak ada reagen kritis pada divisi ini.</td></tr>`;
+        } else {
+          items.forEach(i => {
+            tbody.innerHTML += `
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 font-bold text-slate-800">${i.namaBarang}</td>
+                <td class="p-3 text-center font-extrabold text-rose-600">${i.stok} ${i.satuan}</td>
+              </tr>`;
+          });
+        }
+      } else {
+        titleEl.innerText = `Rincian Kedaluwarsa - Divisi ${divNames[kategori]}`;
+        headerBg.className = "px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-amber-50";
+        titleEl.className = "font-bold text-amber-900 text-lg";
+        subtitleEl.className = "text-xs text-amber-700 font-medium";
+        tableHead.innerHTML = `<tr><th class="p-3">Nama Reagen</th><th class="p-3">Merk</th><th class="p-3">Tanggal Expired (ED)</th><th class="p-3 text-center">Sisa Waktu</th></tr>`;
+        
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400 italic">Tidak ada reagen mendekati ED pada divisi ini.</td></tr>`;
+        } else {
+          items.forEach(i => {
+            tbody.innerHTML += `
+              <tr class="hover:bg-slate-50">
+                <td class="p-3 font-bold text-slate-800">${i.namaBarang}</td>
+                <td class="p-3 text-slate-600">${i.merk || '-'}</td>
+                <td class="p-3 font-mono text-rose-600 font-semibold">${i.ed}</td>
+                <td class="p-3 text-center"><span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">${i.status}</span></td>
+              </tr>`;
+          });
+        }
+      }
+
+      document.getElementById('modal-alert-detail').classList.replace('hidden', 'flex');
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.replace('flex', 'hidden'); }
+    function openModalMaster() {
+      document.getElementById('form-master').reset();
+      document.getElementById('master-rowNum').value = '';
+      document.getElementById('master-kategori').value = currentMasterKategori === 'Imunohisto' ? 'Imunohistokimia' : currentMasterKategori;
+      document.getElementById('modal-master').classList.replace('hidden', 'flex');
+    }
+
+    function editMaster(rowNum) {
+      let item = appData.masterData.find(m => m._rowNum === rowNum);
+      if (!item) return;
+      document.getElementById('master-rowNum').value = rowNum;
+      document.getElementById('master-kategori').value = item['Kategori'];
+      document.getElementById('master-nama').value = item['Nama Bahan'];
+      document.getElementById('master-rumus').value = item['Rumus Kimia CAS'];
+      document.getElementById('master-grade').value = item['Grade Bahan'];
+      document.getElementById('master-bentuk').value = item['Bentuk Fisik'];
+      document.getElementById('modal-master').classList.replace('hidden', 'flex');
+    }
+
+    function openModalAmbil() {
+      document.getElementById('form-ambil').reset();
+      document.getElementById('ambil-nama').value = (currentUser && currentUser.nama) ? currentUser.nama : "Admin Laboran";
+      document.getElementById('ambil-tgl').value = new Date().toISOString().split('T')[0];
+      const select = document.getElementById('ambil-kode');
+      select.innerHTML = '<option value="">-- Pilih Batch Reagen (FIFO) --</option>';
+      
+      let assetMap = { 'Histopatologi': appData.histopatologi || [], 'Imunohisto': appData.imunohisto || [], 'Sitologi': appData.sitologi || [] };
+      let listReagen = (assetMap[currentKategori] || []).filter(item => Number(item['Stok Akhir']) > 0);
+
+      listReagen.sort((a, b) => new Date(a['Tanggal Expired']) - new Date(b['Tanggal Expired']));
+
+      listReagen.forEach((item, index) => {
+        let labelPrioritas = index === 0 ? " ⭐ [UTAMAKAN / ED TERDEKAT]" : "";
+        select.innerHTML += `<option value="${item['Kode Barang']}">[ED: ${item['Tanggal Expired']}] ${item['Kode Barang']} - ${item['Nama Barang']} (Sisa: ${item['Stok Akhir']} ${item['Satuan'] || ''})${labelPrioritas}</option>`;
+      });
+
+      document.getElementById('modal-ambil').classList.replace('hidden', 'flex');
+    }
+
+    function openModalPengaturan() {
+      let limits = {};
+      (appData.pengaturan || []).forEach(p => limits[p['Kategori']] = p['Min Stock']);
+      document.getElementById('cfg-histo').value = limits['Histopatologi'] || 5;
+      document.getElementById('cfg-imuno').value = limits['Imunohistokimia'] || limits['Imunohisto'] || 5;
+      document.getElementById('cfg-sito').value = limits['Sitologi'] || 5;
+      document.getElementById('modal-pengaturan').classList.replace('hidden', 'flex');
+    }
+
+    function submitFormMaster(e) {
+      e.preventDefault();
+      let payload = {
+        kategori: document.getElementById('master-kategori').value,
+        namaBahan: document.getElementById('master-nama').value,
+        rumusKimia: document.getElementById('master-rumus').value,
+        gradeBahan: document.getElementById('master-grade').value,
+        bentukFisik: document.getElementById('master-bentuk').value,
+        produsen: "-", kodeKatalog: "-"
+      };
+      google.script.run.withSuccessHandler(() => {
+        showToast("Katalog berhasil disimpan!", "success", "Sukses");
+        closeModal('modal-master');
+        fetchAppInitialData();
+      }).saveMasterData(payload, document.getElementById('master-rowNum').value);
+    }
+
+    function submitFormAmbil(e) {
+      e.preventDefault();
+      let kodeBarang = document.getElementById('ambil-kode').value;
+      
+      let assetMap = { 'Histopatologi': appData.histopatologi || [], 'Imunohisto': appData.imunohisto || [], 'Sitologi': appData.sitologi || [] };
+      let allDivisiAset = assetMap[currentKategori] || [];
+      let selectedBatch = allDivisiAset.find(item => item['Kode Barang'] === kodeBarang);
+
+      if (selectedBatch) {
+        let namaBarang = (selectedBatch['Nama Barang'] || '').trim().toLowerCase();
+        let sameReagenBatches = allDivisiAset.filter(item => (item['Nama Barang'] || '').trim().toLowerCase() === namaBarang && Number(item['Stok Akhir']) > 0);
+        sameReagenBatches.sort((a, b) => new Date(a['Tanggal Expired']) - new Date(b['Tanggal Expired']));
+
+        if (sameReagenBatches.length > 0) {
+          let earliestBatch = sameReagenBatches[0];
+          if (selectedBatch['Kode Barang'] !== earliestBatch['Kode Barang']) {
+            showConfirm(`Peringatan FIFO: Batch ${earliestBatch['Kode Barang']} (ED: ${earliestBatch['Tanggal Expired']}) memiliki masa kedaluwarsa yang lebih dekat dibanding batch ini (ED: ${selectedBatch['Tanggal Expired']}). Yakin ingin tetap mengambil?`, () => {
+              executeAmbilReagen();
+            });
+            return;
+          }
+        }
+      }
+
+      executeAmbilReagen();
+    }
+
+    function executeAmbilReagen() {
+      let payload = {
+        kodeBarang: document.getElementById('ambil-kode').value,
+        namaPengambil: document.getElementById('ambil-nama').value,
+        jumlahDiambil: document.getElementById('ambil-jumlah').value,
+        tanggalPengambilan: document.getElementById('ambil-tgl').value
+      };
+      google.script.run.withSuccessHandler(() => {
+        showToast("Pengambilan berhasil dicatat!", "success", "Sukses");
+        closeModal('modal-ambil');
+        fetchAppInitialData();
+      }).catatPengambilan(currentKategori, payload);
+    }
+
+    function submitPengaturan(e) {
+      e.preventDefault();
+      google.script.run.withSuccessHandler(() => {
+        showToast("Pengaturan diperbarui!", "success", "Sukses");
+        closeModal('modal-pengaturan');
+        fetchAppInitialData();
+      }).savePengaturan(document.getElementById('cfg-histo').value, document.getElementById('cfg-imuno').value, document.getElementById('cfg-sito').value);
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      let inputUser = document.getElementById('login-username').value;
+      google.script.run.withSuccessHandler(res => {
+        if (res.sukses) {
+          currentUser = res.dataUser;
+          currentUser.username = inputUser;
+          
+          document.getElementById('loginOverlay').style.display = 'none';
+          document.getElementById('userDisplayName').innerText = currentUser.nama || inputUser;
+          
+          applyUserRoleAccess();
+
+          showToast("Login Berhasil", "success", "Login");
+          fetchAppInitialData();
+        } else {
+          showToast(res.pesan || "Login gagal.", "error", "Gagal");
+        }
+      }).prosesLogin(inputUser, document.getElementById('login-password').value);
+    }
+  </script>
+</body>
+</html>
